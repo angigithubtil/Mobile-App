@@ -16,7 +16,7 @@ Employee Shift Management is a Flutter + Node.js application for handling employ
 - Employee shift calendar view
 - Employee clock in / clock out
 - Attendance views for admin and employee dashboards
-- Updated UI theme for a cleaner, responsive experience
+- UI theme for a cleaner, responsive experience
 
 ## Project Structure
 
@@ -74,8 +74,6 @@ Notes:
 cd frontend
 flutter.bat doctor -v
 ```
-
-- Backend quick check:
 
 ```powershell
 curl http://localhost:3000/api/employees
