@@ -77,7 +77,7 @@ class AdminRepositoryImpl implements AdminRepository {
   @override
   Future<Shift> updateShift(Shift shift) async {
     try {
-       final updated = await _apiService.updateShift(shift);
+      final updated = await _apiService.updateShift(shift);
       return Shift(
         id: updated.id,
         employeeId: updated.employeeId,
@@ -90,7 +90,7 @@ class AdminRepositoryImpl implements AdminRepository {
   }
 
   @override
-  Future<void> deleteShift(int id) async {
+  Future<void> deleteShift(String id) async {
     try {
       await _apiService.deleteShift(id);
     } catch (e) {
@@ -124,4 +124,4 @@ class AdminRepositoryImpl implements AdminRepository {
       throw Exception('Failed to delete attendance record: $e');
     }
   }
-} 
+}

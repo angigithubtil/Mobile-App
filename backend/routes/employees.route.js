@@ -1,0 +1,44 @@
+import express from "express";
+import {
+  register,
+  login,
+  getAllEmployees,
+  getOneEmployee,
+  updateEmployee,
+  deleteEmployee,
+  clockin,
+  clockout,
+  assignShift,
+  getAssignedShift,
+  getAllAssignedShifts,
+  updateShift,
+  deleteShift,
+  getAllEmployeesWithStatus,
+  getAllEmployeesWithAttendance,
+  singleAttendance,
+  singleStatus,
+  logout,
+} from "./routes.js";
+
+const router = express.Router();
+
+router.post("/register", register);
+router.post("/login", login);
+router.get("/employees", getAllEmployees);
+router.get("/employees/:id", getOneEmployee);
+router.put("/updateEmployee/:id", updateEmployee);
+router.delete("/deleteEmployee/:id", deleteEmployee);
+router.post("/clockin/:id", clockin);
+router.post("/clockout/:id", clockout);
+router.post("/assignShift/:id", assignShift);
+router.get("/assignedShift", getAllAssignedShifts);
+router.get("/assignedShift/:id", getAssignedShift);
+router.put("/updateShift/:id", updateShift);
+router.delete("/shifts/:id", deleteShift);
+router.get("/status/:id", singleStatus);
+router.get("/status", getAllEmployeesWithStatus);
+router.get("/attendance/:id", singleAttendance);
+router.get("/attendance", getAllEmployeesWithAttendance);
+router.post("/logout", logout);
+
+export default router;

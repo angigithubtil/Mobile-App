@@ -1,6 +1,6 @@
 ﻿import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import '../states/auth_notifier.dart';
+import '../../application/providers/auth_providers.dart';
 import '../theme/app_theme.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
@@ -28,7 +28,8 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
 
     if (authState.user != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        Navigator.pushReplacementNamed(context, authState.user!.isAdmin ? '/admin' : '/employee');
+        Navigator.of(context).pushReplacementNamed(
+            authState.user!.isAdmin ? '/admin' : '/employee');
       });
     }
 
@@ -53,19 +54,34 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
                       const SizedBox(height: 4),
-                      Image.asset('assets/logo.jpg', height: 72),
+                      const SizedBox(height: 72),
                       const SizedBox(height: 16),
-                      const Text('ShiftMaster', textAlign: TextAlign.center, style: TextStyle(fontSize: 28, fontWeight: FontWeight.w700)),
+                      const Text('ShiftMaster',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                              fontSize: 28, fontWeight: FontWeight.w700)),
                       const SizedBox(height: 6),
-                      const Text('Sign in to continue', textAlign: TextAlign.center, style: TextStyle(color: Colors.black54)),
+                      const Text('Sign in to continue',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(color: Colors.black54)),
                       const SizedBox(height: 24),
-                      const Text('Email', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const Text('Email',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
-                      TextField(controller: _emailController, keyboardType: TextInputType.emailAddress, decoration: const InputDecoration(hintText: 'Enter your email')),
+                      TextField(
+                          controller: _emailController,
+                          keyboardType: TextInputType.emailAddress,
+                          decoration: const InputDecoration(
+                              hintText: 'Enter your email')),
                       const SizedBox(height: 14),
-                      const Text('Password', style: TextStyle(fontWeight: FontWeight.w600)),
+                      const Text('Password',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
-                      TextField(controller: _passwordController, obscureText: true, decoration: const InputDecoration(hintText: 'Enter your password')),
+                      TextField(
+                          controller: _passwordController,
+                          obscureText: true,
+                          decoration: const InputDecoration(
+                              hintText: 'Enter your password')),
                       const SizedBox(height: 18),
                       if (authState.error != null)
                         Container(
@@ -74,22 +90,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                           decoration: BoxDecoration(
                             color: AppTheme.danger.withOpacity(0.08),
                             borderRadius: BorderRadius.circular(12),
-                            border: Border.all(color: AppTheme.danger.withOpacity(0.24)),
+                            border: Border.all(
+                                color: AppTheme.danger.withOpacity(0.24)),
                           ),
-                          child: Text(authState.error!, style: const TextStyle(color: AppTheme.danger)),
+                          child: Text(authState.error!,
+                              style: const TextStyle(color: AppTheme.danger)),
                         ),
                       ElevatedButton(
                         onPressed: authState.isLoading
                             ? null
                             : () async {
-                                await authNotifier.login(_emailController.text.trim(), _passwordController.text);
+                                await authNotifier.signIn(
+                                    _emailController.text.trim(),
+                                    _passwordController.text);
                               },
                         child: authState.isLoading
-                            ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white))
+                            ? const SizedBox(
+                                width: 20,
+                                height: 20,
+                                child: CircularProgressIndicator(
+                                    strokeWidth: 2, color: Colors.white))
                             : const Text('Sign In'),
                       ),
                       const SizedBox(height: 16),
-                      const Text('(c) 2026 ShiftMaster', textAlign: TextAlign.center, style: TextStyle(fontSize: 12, color: Colors.grey)),
+                      const Text('(c) 2026 ShiftMaster',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(fontSize: 12, color: Colors.grey)),
                     ],
                   ),
                 ),

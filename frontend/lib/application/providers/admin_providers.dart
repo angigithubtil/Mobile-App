@@ -22,7 +22,8 @@ final adminUseCasesProvider = Provider<AdminUseCases>((ref) {
 });
 
 // Employee Providers
-final employeesProvider = StateNotifierProvider<EmployeesNotifier, AsyncValue<List<Employee>>>((ref) {
+final employeesProvider =
+    StateNotifierProvider<EmployeesNotifier, AsyncValue<List<Employee>>>((ref) {
   final useCases = ref.watch(adminUseCasesProvider);
   return EmployeesNotifier(useCases);
 });
@@ -60,7 +61,9 @@ class EmployeesNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
       final updatedEmployee = await _useCases.updateEmployee(employee);
       state.whenData((employees) {
         state = AsyncValue.data(
-          employees.map((e) => e.id == employee.id ? updatedEmployee : e).toList(),
+          employees
+              .map((e) => e.id == employee.id ? updatedEmployee : e)
+              .toList(),
         );
       });
     } catch (error, stackTrace) {
@@ -83,7 +86,8 @@ class EmployeesNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
 }
 
 // Shift Providers
-final shiftsProvider = StateNotifierProvider<ShiftsNotifier, AsyncValue<List<Shift>>>((ref) {
+final shiftsProvider =
+    StateNotifierProvider<ShiftsNotifier, AsyncValue<List<Shift>>>((ref) {
   final useCases = ref.watch(adminUseCasesProvider);
   return ShiftsNotifier(useCases);
 });
@@ -144,7 +148,9 @@ class ShiftsNotifier extends StateNotifier<AsyncValue<List<Shift>>> {
 }
 
 // Attendance Providers
-final attendanceProvider = StateNotifierProvider<AttendanceNotifier, AsyncValue<List<Attendance>>>((ref) {
+final attendanceProvider =
+    StateNotifierProvider<AttendanceNotifier, AsyncValue<List<Attendance>>>(
+        (ref) {
   final useCases = ref.watch(adminUseCasesProvider);
   return AttendanceNotifier(useCases);
 });
@@ -171,7 +177,9 @@ class AttendanceNotifier extends StateNotifier<AsyncValue<List<Attendance>>> {
       final updatedAttendance = await _useCases.updateAttendance(attendance);
       state.whenData((records) {
         state = AsyncValue.data(
-          records.map((a) => a.id == attendance.id ? updatedAttendance : a).toList(),
+          records
+              .map((a) => a.id == attendance.id ? updatedAttendance : a)
+              .toList(),
         );
       });
     } catch (error, stackTrace) {
@@ -191,4 +199,30 @@ class AttendanceNotifier extends StateNotifier<AsyncValue<List<Attendance>>> {
       state = AsyncValue.error(error, stackTrace);
     }
   }
-} 
+}
+
+// Provider aliases for convenience
+final employeeProvider = employeesProvider;
+final shiftProvider = shiftsProvider;
+final profileProvider =
+    StateNotifierProvider<ProfileNotifier, Map<String, dynamic>?>((ref) {
+  return ProfileNotifier();
+});
+
+class ProfileNotifier extends StateNotifier<Map<String, dynamic>?> {
+  ProfileNotifier() : super(null);
+
+  void setProfile(Map<String, dynamic> profile) {
+    state = profile;
+  }
+
+  void updateProfile(Map<String, dynamic> updates) {
+    if (state != null) {
+      state = {...state!, ...updates};
+    }
+  }
+
+  void clear() {
+    state = null;
+  }
+}
