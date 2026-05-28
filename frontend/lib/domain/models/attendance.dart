@@ -2,6 +2,8 @@ class Attendance {
   final String id;
   final String employeeId;
   final String date;
+
+  static String _asString(dynamic value) => value?.toString() ?? '';
   final String? clockIn;
   final String? clockOut;
   final String status;
@@ -21,14 +23,14 @@ class Attendance {
 
   factory Attendance.fromJson(Map<String, dynamic> json) {
     return Attendance(
-      id: json['id'] ?? json['_id'] ?? '',
-      employeeId: json['employeeId'] ?? '',
-      date: json['date'] ?? '',
-      clockIn: json['clockIn'],
-      clockOut: json['clockOut'],
-      status: json['status'] ?? 'pending',
-      employeeName: json['employeeName'],
-      checkIn: json['checkIn'] ?? json['clockIn'],
+      id: _asString(json['id'] ?? json['_id']),
+      employeeId: _asString(json['employeeId']),
+      date: _asString(json['date']),
+      clockIn: _asString(json['clockIn']),
+      clockOut: _asString(json['clockOut']),
+      status: _asString(json['status']).isNotEmpty ? _asString(json['status']) : 'pending',
+      employeeName: _asString(json['employeeName']),
+      checkIn: _asString(json['checkIn'] ?? json['clockIn']),
     );
   }
 

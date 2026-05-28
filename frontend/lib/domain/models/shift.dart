@@ -5,6 +5,8 @@ class Shift {
   final String shiftType;
   final List<dynamic> attendance;
 
+  static String _asString(dynamic value) => value?.toString() ?? '';
+
   Shift({
     required this.id,
     required this.employeeId,
@@ -15,11 +17,11 @@ class Shift {
 
   factory Shift.fromJson(Map<String, dynamic> json) {
     return Shift(
-      id: json['id'] ?? json['_id'] ?? '',
-      employeeId: json['employeeId'] ?? '',
-      date: json['date'] ?? '',
-      shiftType: json['shiftType'] ?? '',
-      attendance: json['attendance'] ?? [],
+      id: _asString(json['id'] ?? json['_id']),
+      employeeId: _asString(json['employeeId']),
+      date: _asString(json['date']),
+      shiftType: _asString(json['shiftType']),
+      attendance: json['attendance'] ?? const [],
     );
   }
 

@@ -8,12 +8,27 @@ import 'package:uuid/uuid.dart';
 
 class AdminApiService {
   final String baseUrl;
+  final String? token;
 
-  AdminApiService({required this.baseUrl});
+  AdminApiService({required this.baseUrl, this.token});
+
+  Map<String, String> _buildHeaders({bool jsonContent = true}) {
+    final headers = <String, String>{};
+    if (jsonContent) {
+      headers['Content-Type'] = 'application/json';
+    }
+    if (token != null && token!.isNotEmpty) {
+      headers['Authorization'] = 'Bearer $token';
+    }
+    return headers;
+  }
 
   // Employee endpoints
   Future<List<Employee>> getEmployees() async {
-    final response = await http.get(Uri.parse('$baseUrl${AppConfig.employeesEndpoint}'));
+    final response = await http.get(
+      Uri.parse('$baseUrl${AppConfig.employeesEndpoint}'),
+      headers: _buildHeaders(),
+    );
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((json) => Employee.fromJson(json)).toList();
@@ -24,20 +39,12 @@ class AdminApiService {
 
   Future<Employee> createEmployee(Employee employee) async {
     final url = '$baseUrl/register';
-    final headers = {'Content-Type': 'application/json'};
     final body = json.encode(employee.toJson());
-    print('--- CREATE EMPLOYEE DEBUG ---');
-    print('URL: ' + url);
-    print('Headers: ' + headers.toString());
-    print('Body: ' + body);
     final response = await http.post(
       Uri.parse(url),
-      headers: headers,
+      headers: _buildHeaders(),
       body: body,
     );
-    print('Status: \\${response.statusCode}');
-    print('Response: \\${response.body}');
-    print('-----------------------------');
     if (response.statusCode == 201) {
       final Map<String, dynamic> jsonResponse = json.decode(response.body);
       final employeeJson = jsonResponse['employee'];
@@ -50,7 +57,7 @@ class AdminApiService {
   Future<Employee> updateEmployee(Employee employee) async {
     final response = await http.put(
       Uri.parse('$baseUrl/updateEmployee/${employee.id}'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _buildHeaders(),
       body: json.encode(employee.toJson()),
     );
     if (response.statusCode == 200) {
@@ -63,6 +70,7 @@ class AdminApiService {
   Future<void> deleteEmployee(int id) async {
     final response = await http.delete(
       Uri.parse('$baseUrl/deleteEmployee/$id'),
+      headers: _buildHeaders(jsonContent: false),
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to delete employee');
@@ -71,7 +79,10 @@ class AdminApiService {
 
   // Shift endpoints
   Future<List<Shift>> getShifts() async {
-    final response = await http.get(Uri.parse('${baseUrl}/assignedShift'));
+    final response = await http.get(
+      Uri.parse('${baseUrl}/assignedShift'),
+      headers: _buildHeaders(),
+    );
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((json) => Shift.fromJson(json)).toList();
@@ -83,7 +94,7 @@ class AdminApiService {
   Future<Shift> createShift(Shift shift) async {
     final response = await http.post(
       Uri.parse('$baseUrl${AppConfig.assignShiftEndpoint}/${shift.employeeId}'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _buildHeaders(),
       body: json.encode(shift.toJson()),
     );
     if (response.statusCode == 201) {
@@ -95,21 +106,11 @@ class AdminApiService {
   }
 
   Future<Shift> updateShift(Shift shift) async {
-    final url = '$baseUrl${AppConfig.updateShiftEndpoint}/${shift.id}';
-    final headers = {'Content-Type': 'application/json'};
-    final body = json.encode(shift.toJson());
-    print('--- UPDATE SHIFT DEBUG ---');
-    print('URL: ' + url);
-    print('Headers: ' + headers.toString());
-    print('Body: ' + body);
     final response = await http.put(
-      Uri.parse(url),
-      headers: headers,
-      body: body,
+      Uri.parse('$baseUrl${AppConfig.updateShiftEndpoint}/${shift.id}'),
+      headers: _buildHeaders(),
+      body: json.encode(shift.toJson()),
     );
-    print('Status: ${response.statusCode}');
-    print('Response: ${response.body}');
-    print('--------------------------');
     if (response.statusCode == 200) {
       final payload = json.decode(response.body) as Map<String, dynamic>;
       return Shift.fromJson(payload['shift'] as Map<String, dynamic>);
@@ -121,6 +122,7 @@ class AdminApiService {
   Future<void> deleteShift(String id) async {
     final response = await http.delete(
       Uri.parse('$baseUrl${AppConfig.shiftsEndpoint}/$id'),
+      headers: _buildHeaders(jsonContent: false),
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to delete shift');
@@ -129,7 +131,10 @@ class AdminApiService {
 
   // Attendance endpoints
   Future<List<Attendance>> getAttendance() async {
-    final response = await http.get(Uri.parse('$baseUrl${AppConfig.attendanceEndpoint}'));
+    final response = await http.get(
+      Uri.parse('$baseUrl${AppConfig.attendanceEndpoint}'),
+      headers: _buildHeaders(),
+    );
     if (response.statusCode == 200) {
       final List<dynamic> data = json.decode(response.body);
       return data.map((json) => Attendance.fromJson(json)).toList();
@@ -141,7 +146,7 @@ class AdminApiService {
   Future<Attendance> updateAttendance(Attendance attendance) async {
     final response = await http.put(
       Uri.parse('$baseUrl${AppConfig.attendanceEndpoint}/${attendance.id}'),
-      headers: {'Content-Type': 'application/json'},
+      headers: _buildHeaders(),
       body: json.encode(attendance.toJson()),
     );
     if (response.statusCode == 200) {
@@ -154,6 +159,7 @@ class AdminApiService {
   Future<void> deleteAttendance(int id) async {
     final response = await http.delete(
       Uri.parse('$baseUrl${AppConfig.attendanceEndpoint}/$id'),
+      headers: _buildHeaders(jsonContent: false),
     );
     if (response.statusCode != 200) {
       throw Exception('Failed to delete attendance record');
@@ -165,11 +171,11 @@ class AdminApiService {
     final String shiftId = const Uuid().v4();
     final response = await http.post(
       Uri.parse(url),
-      headers: {'Content-Type': 'application/json'},
+      headers: _buildHeaders(),
       body: json.encode({'shiftId': shiftId, 'shiftType': shiftType, 'date': date}),
     );
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception('Failed to assign shift: ${response.body}');
     }
   }
-} 
+}

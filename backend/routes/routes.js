@@ -1,6 +1,7 @@
 import bcrypt from "bcryptjs";
 import Employee from "../modals/modal.employee.js";
 import Shift from "../modals/modal.shift.js";
+import { signToken } from "../utils/jwt.js";
 
 // Register
 async function register(req, res) {
@@ -16,6 +17,23 @@ async function register(req, res) {
     status,
     isAdmin,
   } = req.body;
+
+  const profilePictureUrl = req.file
+    ? `/uploads/${req.file.filename}`
+    : profilePicture || undefined;
+
+  const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  if (!name || !email || !id || !password) {
+    return res.status(400).json({ message: "Name, email, id and password are required." });
+  }
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email address." });
+  }
+
+  if (password.length < 6) {
+    return res.status(400).json({ message: "Password must be at least 6 characters." });
+  }
 
   try {
     // Check if email or id already exists
@@ -35,7 +53,7 @@ async function register(req, res) {
       email,
       id,
       password: hashedPassword,
-      profilePicture,
+      profilePicture: profilePictureUrl,
       phone,
       position,
       shift,
@@ -44,11 +62,22 @@ async function register(req, res) {
     });
 
     const savedEmployee = await employee.save();
-    return res
-      .status(201)
-      .json({ message: "User created successfully", employee: savedEmployee });
+    const employeeObject = savedEmployee.toObject();
+    delete employeeObject.password;
+
+    const token = signToken({
+      id: employeeObject.id,
+      email: employeeObject.email,
+      isAdmin: employeeObject.isAdmin,
+    });
+
+    return res.status(201).json({
+      message: "User created successfully",
+      employee: employeeObject,
+      token,
+    });
   } catch (error) {
-    console.log(error)
+    console.error(error);
     return res.status(400).json({ message: "Error creating user", error });
   }
 }
@@ -102,10 +131,22 @@ async function login(req, res) {
     if (!isMatch) {
       return res.status(401).json({ message: "Invalid credentials" });
     }
-   
-    return res.status(200).json({ message: "Login successful", employee });
+
+    const employeeObject = employee.toObject();
+    delete employeeObject.password;
+    const token = signToken({
+      id: employeeObject.id,
+      email: employeeObject.email,
+      isAdmin: employeeObject.isAdmin,
+    });
+
+    return res.status(200).json({
+      message: "Login successful",
+      employee: employeeObject,
+      token,
+    });
   } catch (error) {
-    console.log(error)
+    console.error(error);
     return res.status(500).json({ message: "Login error", error });
   }
 }

@@ -6,9 +6,15 @@ import '../../domain/usecases/admin_usecases.dart';
 import '../../infrastructure/repositories/admin_repository_impl.dart';
 import '../../infrastructure/services/admin_api_service.dart';
 import '../../config/app_config.dart';
+import 'auth_providers.dart';
+
+final authTokenProvider = Provider<String?>((ref) {
+  return ref.watch(authProvider).token;
+});
 
 final adminApiServiceProvider = Provider<AdminApiService>((ref) {
-  return AdminApiService(baseUrl: AppConfig.apiBaseUrl);
+  final token = ref.watch(authTokenProvider);
+  return AdminApiService(baseUrl: AppConfig.apiBaseUrl, token: token);
 });
 
 final adminRepositoryProvider = Provider<AdminRepositoryImpl>((ref) {

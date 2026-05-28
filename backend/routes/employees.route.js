@@ -1,4 +1,7 @@
 import express from "express";
+import multer from "multer";
+import path from "path";
+import { fileURLToPath } from "url";
 import {
   register,
   login,
@@ -20,9 +23,25 @@ import {
   logout,
 } from "./routes.js";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const upload = multer({
+  storage: multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, path.join(__dirname, "../uploads"));
+    },
+    filename: (req, file, cb) => {
+      const timestamp = Date.now();
+      const safeName = file.originalname.replace(/[^a-z0-9.\-\_\.]/gi, '_');
+      cb(null, `${timestamp}-${safeName}`);
+    },
+  }),
+  limits: { fileSize: 3 * 1024 * 1024 },
+});
+
 const router = express.Router();
 
-router.post("/register", register);
+router.post("/register", upload.single('profilePicture'), register);
 router.post("/login", login);
 router.get("/employees", getAllEmployees);
 router.get("/employees/:id", getOneEmployee);
