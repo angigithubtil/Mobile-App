@@ -1,0 +1,23 @@
+name: employee_shift_management_flutter
+description: Employee Shift Management Flutter frontend
+publish_to: none
+version: 1.0.0+1
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  flutter_riverpod: ^2.4.0
+  dio: ^5.9.2
+  http: ^1.1.0
+  uuid: ^3.0.7
+  table_calendar: ^3.0.8
+  cupertino_icons: ^1.0.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+flutter:
+  uses-material-design: true
