@@ -605,13 +605,12 @@ async function singleAttendance(req, res) {
   const { id } = req.params;
 
   try {
-    const employee = await Employee.findOne({ id }, "name id attendance");
+    const employee = await Employee.findOne({ id }, "name id");
+    if (!employee) return res.status(404).json({ message: "Employee not found" });
 
-    if (!employee) {
-      return res.status(404).json({ message: "Employee not found" });
-    }
-
-    return res.status(200).json(employee);
+    const shifts = await Shift.find({ employeeId: Number(id) });
+    const records = buildFlatAttendanceRecords(shifts, new Map([[id, employee.name]]));
+    return res.status(200).json(records);
   } catch (error) {
     return res
       .status(500)
@@ -622,18 +621,69 @@ async function singleAttendance(req, res) {
 
 async function getAllEmployeesWithAttendance(req, res) {
   try {
-    const employees = await Employee.find({}, "name id attendance");
+    const shifts = await Shift.find({ attendance: { $exists: true, $ne: [] } });
+    if (!shifts.length) return res.status(200).json([]);
 
-    if (!employees) {
-      return res.status(404).json({ message: "No employees found" });
-    }
-
-    return res.status(200).json(employees);
+    const employeeIds = [...new Set(shifts.map((s) => s.employeeId))];
+    const employees = await Employee.find(
+      { id: { $in: employeeIds.map(String) } },
+      "id name",
+    );
+    const nameById = new Map(employees.map((e) => [e.id.toString(), e.name]));
+    const records = buildFlatAttendanceRecords(shifts, nameById);
+    return res.status(200).json(records);
   } catch (error) {
     return res
       .status(500)
       .json({ message: "Error retrieving employees", error });
   }
+}
+
+function buildFlatAttendanceRecords(shifts, nameByEmployeeId) {
+  const byKey = new Map();
+
+  for (const shift of shifts) {
+    const employeeId = shift.employeeId?.toString?.() ?? String(shift.employeeId);
+    const employeeName = nameByEmployeeId.get(employeeId);
+
+    const attendanceArr = Array.isArray(shift.attendance) ? shift.attendance : [];
+    for (const row of attendanceArr) {
+      const date = row?.date?.toString?.() ?? "";
+      if (!date) continue;
+
+      const key = `${shift.id}:${employeeId}:${date}`;
+      const existing = byKey.get(key) ?? {
+        id: `${shift.id}:${date}`,
+        employeeId,
+        employeeName,
+        date,
+        clockIn: null,
+        clockOut: null,
+        status: "pending",
+        checkIn: null,
+      };
+
+      const actionType = row?.actionType;
+      const time = row?.time?.toString?.() ?? null;
+      if (actionType === "Clock In" && time) {
+        existing.clockIn = existing.clockIn ?? time;
+        existing.checkIn = existing.checkIn ?? time;
+        existing.status = "active";
+      }
+      if (actionType === "Clock Out" && time) {
+        existing.clockOut = existing.clockOut ?? time;
+        existing.status = "completed";
+      }
+
+      byKey.set(key, existing);
+    }
+  }
+
+  return [...byKey.values()].sort((a, b) => {
+    const d = (b.date ?? "").localeCompare(a.date ?? "");
+    if (d !== 0) return d;
+    return (b.employeeId ?? "").localeCompare(a.employeeId ?? "");
+  });
 }
 
 // logout user

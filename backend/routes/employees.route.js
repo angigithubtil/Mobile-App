@@ -2,6 +2,7 @@ import express from "express";
 import multer from "multer";
 import path from "path";
 import { fileURLToPath } from "url";
+import { requireAdmin, requireSelfOrAdmin } from "../middleware/roles.js";
 import {
   register,
   login,
@@ -44,24 +45,29 @@ const router = express.Router();
 
 router.post("/register", upload.single("profilePicture"), register);
 router.post("/login", login);
-router.post("/employees", upload.single("profilePicture"), createEmployee);
-router.get("/employees", getAllEmployees);
-router.get("/employees/:id", getOneEmployee);
-router.put("/employees/:id", updateEmployee);
-router.delete("/employees/:id", deleteEmployee);
-router.put("/updateEmployee/:id", updateEmployee);
-router.delete("/deleteEmployee/:id", deleteEmployee);
-router.post("/clockin/:id", clockin);
-router.post("/clockout/:id", clockout);
-router.post("/assignShift/:id", assignShift);
-router.get("/assignedShift", getAllAssignedShifts);
-router.get("/assignedShift/:id", getAssignedShift);
-router.put("/updateShift/:id", updateShift);
-router.delete("/shifts/:id", deleteShift);
-router.get("/status/:id", singleStatus);
-router.get("/status", getAllEmployeesWithStatus);
-router.get("/attendance/:id", singleAttendance);
-router.get("/attendance", getAllEmployeesWithAttendance);
+router.post(
+  "/employees",
+  requireAdmin,
+  upload.single("profilePicture"),
+  createEmployee,
+);
+router.get("/employees", requireAdmin, getAllEmployees);
+router.get("/employees/:id", requireSelfOrAdmin("id"), getOneEmployee);
+router.put("/employees/:id", requireSelfOrAdmin("id"), updateEmployee);
+router.delete("/employees/:id", requireAdmin, deleteEmployee);
+router.put("/updateEmployee/:id", requireSelfOrAdmin("id"), updateEmployee);
+router.delete("/deleteEmployee/:id", requireAdmin, deleteEmployee);
+router.post("/clockin/:id", requireSelfOrAdmin("id"), clockin);
+router.post("/clockout/:id", requireSelfOrAdmin("id"), clockout);
+router.post("/assignShift/:id", requireAdmin, assignShift);
+router.get("/assignedShift", requireAdmin, getAllAssignedShifts);
+router.get("/assignedShift/:id", requireSelfOrAdmin("id"), getAssignedShift);
+router.put("/updateShift/:id", requireAdmin, updateShift);
+router.delete("/shifts/:id", requireAdmin, deleteShift);
+router.get("/status/:id", requireSelfOrAdmin("id"), singleStatus);
+router.get("/status", requireAdmin, getAllEmployeesWithStatus);
+router.get("/attendance/:id", requireSelfOrAdmin("id"), singleAttendance);
+router.get("/attendance", requireAdmin, getAllEmployeesWithAttendance);
 router.post("/logout", logout);
 
 export default router;

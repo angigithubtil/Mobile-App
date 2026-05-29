@@ -177,15 +177,68 @@ class _ScheduleTab extends ConsumerWidget {
         if (shifts.isEmpty) {
           return const Center(child: Text('No assigned shifts yet.'));
         }
+        final today = DateTime.now();
+        final startOfToday = DateTime(today.year, today.month, today.day);
+        final upcoming = <Shift>[];
+        final past = <Shift>[];
+        for (final shift in shifts) {
+          final date = _parseDate(shift.date);
+          if (date == null) {
+            past.add(shift);
+            continue;
+          }
+          if (!date.isBefore(startOfToday)) {
+            upcoming.add(shift);
+          } else {
+            past.add(shift);
+          }
+        }
+        upcoming.sort((a, b) => a.date.compareTo(b.date));
+        past.sort((a, b) => b.date.compareTo(a.date));
+        final nextShift = upcoming.isNotEmpty ? upcoming.first : null;
+
         return RefreshIndicator(
           onRefresh: () => ref.read(myShiftsProvider.notifier).fetchShifts(),
-          child: ListView.builder(
+          child: ListView(
             padding: const EdgeInsets.all(16),
-            itemCount: shifts.length,
-            itemBuilder: (context, index) {
-              final shift = shifts[index];
-              return _ShiftCard(shift: shift);
-            },
+            children: [
+              if (nextShift != null) ...[
+                Card(
+                  child: ListTile(
+                    leading: CircleAvatar(
+                      backgroundColor: AppTheme.brand.withValues(alpha: 0.12),
+                      child: const Icon(Icons.flag_outlined, color: AppTheme.brand),
+                    ),
+                    title: const Text('Next shift'),
+                    subtitle: Text(
+                      '${nextShift.shiftType} • ${nextShift.date}',
+                      style: const TextStyle(fontWeight: FontWeight.w600),
+                    ),
+                    trailing: nextShift.date == todayIsoDate()
+                        ? const Chip(label: Text('Today'))
+                        : null,
+                  ),
+                ),
+                const SizedBox(height: 10),
+              ],
+              if (upcoming.isNotEmpty) ...[
+                const Text(
+                  'Upcoming',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                ...upcoming.map((s) => _ShiftCard(shift: s)),
+              ],
+              if (past.isNotEmpty) ...[
+                const SizedBox(height: 8),
+                const Text(
+                  'Past',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                ),
+                const SizedBox(height: 8),
+                ...past.take(14).map((s) => _ShiftCard(shift: s)),
+              ],
+            ],
           ),
         );
       },
@@ -329,6 +382,14 @@ class _ShiftCardState extends ConsumerState<_ShiftCard> {
         ),
       ),
     );
+  }
+}
+
+DateTime? _parseDate(String value) {
+  try {
+    return DateTime.parse(value);
+  } catch (_) {
+    return null;
   }
 }
 

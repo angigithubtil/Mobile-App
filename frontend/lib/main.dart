@@ -23,7 +23,7 @@ class MyApp extends StatelessWidget {
       title: 'Employee Shift Management',
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light(),
-      initialRoute: '/login',
+      initialRoute: '/',
       routes: {
         '/': (context) => const HomeScreen(),
         '/login': (context) => const LoginScreen(),
