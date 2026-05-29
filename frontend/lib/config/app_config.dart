@@ -12,5 +12,9 @@ class AppConfig {
   static const String updateShiftEndpoint = '/updateShift';
   static const String clockInEndpoint = '/clockin';
   static const String clockOutEndpoint = '/clockout';
+  static const String updateMeEndpoint = '/employees/me';
+  static const String clockInMeEndpoint = '/attendance/clock-in';
+  static const String clockOutMeEndpoint = '/attendance/clock-out';
+  static const String myAttendanceEndpoint = '/attendance/me';
   static const String statusEndpoint = '/status';
 }

@@ -5,6 +5,7 @@ class Employee {
   final String? password;
   final String? profilePicture;
   final String? phone;
+  final String? address;
   final String? position;
   final String? shift;
   final String status;
@@ -31,6 +32,7 @@ class Employee {
       password: json['password'],
       profilePicture: json['profilePicture'],
       phone: json['phone'],
+      address: json['address'],
       position: json['position'],
       shift: json['shift'],
       status: json['status'] ?? 'inactive',
@@ -45,6 +47,7 @@ class Employee {
       'email': email,
       'profilePicture': profilePicture,
       'phone': phone,
+      'address': address,
       'position': position,
       'shift': shift,
       'status': status,
@@ -63,6 +66,7 @@ class Employee {
     String? password,
     String? profilePicture,
     String? phone,
+    String? address,
     String? position,
     String? shift,
     String? status,
@@ -75,6 +79,7 @@ class Employee {
       password: password ?? this.password,
       profilePicture: profilePicture ?? this.profilePicture,
       phone: phone ?? this.phone,
+      address: address ?? this.address,
       position: position ?? this.position,
       shift: shift ?? this.shift,
       status: status ?? this.status,

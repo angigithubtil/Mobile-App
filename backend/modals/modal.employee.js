@@ -18,6 +18,7 @@ const employeeSchema = new mongoose.Schema(
     password: { type: String, required: true },
     profilePicture: { type: String },
     phone: { type: String },
+    address: { type: String },
     position: { type: String },
     shift: { type: String },
     status: { type: String, default: "inactive" },

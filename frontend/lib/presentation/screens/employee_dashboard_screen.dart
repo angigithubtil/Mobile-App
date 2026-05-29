@@ -72,13 +72,60 @@ class _EmployeeDashboardScreenState
   }
 }
 
-class _HomeTab extends ConsumerWidget {
+class _HomeTab extends ConsumerStatefulWidget {
   final String name;
 
   const _HomeTab({required this.name});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<_HomeTab> createState() => _HomeTabState();
+}
+
+class _HomeTabState extends ConsumerState<_HomeTab> {
+  bool _busy = false;
+
+  Future<void> _handleClockIn() async {
+    setState(() => _busy = true);
+    try {
+      await ref.read(myShiftsProvider.notifier).clockIn();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Clocked in successfully'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _handleClockOut() async {
+    setState(() => _busy = true);
+    try {
+      await ref.read(myShiftsProvider.notifier).clockOut();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Clocked out successfully'), backgroundColor: Colors.green),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('$e'), backgroundColor: Colors.red),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final statusAsync = ref.watch(myStatusProvider);
     final shiftsAsync = ref.watch(myShiftsProvider);
 
@@ -90,13 +137,41 @@ class _HomeTab extends ConsumerWidget {
       child: ListView(
         padding: const EdgeInsets.all(16),
         children: [
-          Text('Welcome, $name',
+          Text('Welcome, ${widget.name}',
               style:
                   const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
           const SizedBox(height: 8),
           const Text(
-            'View your schedule, clock in or out, and update your profile.',
+            'Quick actions and today\'s schedule.',
             style: TextStyle(color: Colors.black54),
+          ),
+          const SizedBox(height: 20),
+          Row(
+            children: [
+              Expanded(
+                child: ElevatedButton.icon(
+                  onPressed: _busy ? null : _handleClockIn,
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppTheme.brand,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(Icons.login),
+                  label: const Text('Clock In'),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: OutlinedButton.icon(
+                  onPressed: _busy ? null : _handleClockOut,
+                  style: OutlinedButton.styleFrom(
+                    padding: const EdgeInsets.symmetric(vertical: 12),
+                  ),
+                  icon: const Icon(Icons.logout),
+                  label: const Text('Clock Out'),
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 20),
           statusAsync.when(
@@ -106,14 +181,14 @@ class _HomeTab extends ConsumerWidget {
                   backgroundColor: AppTheme.brand.withValues(alpha: 0.15),
                   child: const Icon(Icons.badge_outlined, color: AppTheme.brand),
                 ),
-                title: const Text('Workforce status'),
+                title: const Text('My Work Status'),
                 subtitle: Text(
                   'Status: ${status['status'] ?? 'unknown'} • ID: ${status['id'] ?? ''}',
                 ),
               ),
             ),
-            loading: () => const Center(child: CircularProgressIndicator()),
-            error: (e, _) => Text('Could not load status: $e'),
+            loading: () => const SizedBox.shrink(),
+            error: (e, _) => const SizedBox.shrink(),
           ),
           const SizedBox(height: 12),
           shiftsAsync.when(
@@ -127,7 +202,7 @@ class _HomeTab extends ConsumerWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      const Text('Today',
+                      const Text('Today\'s Shifts',
                           style: TextStyle(
                               fontSize: 18, fontWeight: FontWeight.w600)),
                       const SizedBox(height: 8),
@@ -139,7 +214,7 @@ class _HomeTab extends ConsumerWidget {
                             padding: const EdgeInsets.only(bottom: 8),
                             child: Row(
                               children: [
-                                const Icon(Icons.schedule, size: 20),
+                                const Icon(Icons.schedule, size: 20, color: AppTheme.brand),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
@@ -156,7 +231,7 @@ class _HomeTab extends ConsumerWidget {
                 ),
               );
             },
-            loading: () => const SizedBox.shrink(),
+            loading: () => const Center(child: CircularProgressIndicator()),
             error: (_, __) => const SizedBox.shrink(),
           ),
         ],
@@ -398,35 +473,29 @@ class _AttendanceTab extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final shiftsAsync = ref.watch(myShiftsProvider);
+    final attendanceAsync = ref.watch(myAttendanceProvider);
 
-    return shiftsAsync.when(
-      data: (shifts) {
-        final entries = flattenShiftAttendance(shifts);
-        if (entries.isEmpty) {
+    return attendanceAsync.when(
+      data: (records) {
+        if (records.isEmpty) {
           return const Center(
             child: Text('No attendance activity recorded yet.'),
           );
         }
         return RefreshIndicator(
-          onRefresh: () => ref.read(myShiftsProvider.notifier).fetchShifts(),
+          onRefresh: () => ref.read(myAttendanceProvider.notifier).fetchAttendance(),
           child: ListView.builder(
             padding: const EdgeInsets.all(16),
-            itemCount: entries.length,
+            itemCount: records.length,
             itemBuilder: (context, index) {
-              final entry = entries[index];
+              final entry = records[index];
               return Card(
                 margin: const EdgeInsets.only(bottom: 8),
                 child: ListTile(
-                  leading: Icon(
-                    entry.actionType == 'Clock In'
-                        ? Icons.login
-                        : Icons.logout,
-                    color: AppTheme.brand,
-                  ),
-                  title: Text(entry.actionType),
+                  leading: const Icon(Icons.fact_check_outlined, color: AppTheme.brand),
+                  title: Text(entry.status),
                   subtitle: Text(
-                    '${entry.date} at ${entry.time}\n${entry.shiftType} (${entry.shiftId})',
+                    '${entry.date}\nClock-in: ${entry.clockIn ?? '--'}\nClock-out: ${entry.clockOut ?? '--'}',
                   ),
                   isThreeLine: true,
                 ),
@@ -453,6 +522,7 @@ class _ProfileTabState extends ConsumerState<_ProfileTab> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _phoneController = TextEditingController();
+  final _addressController = TextEditingController();
   final _positionController = TextEditingController();
   final _shiftController = TextEditingController();
   final _passwordController = TextEditingController();
@@ -477,6 +547,7 @@ class _ProfileTabState extends ConsumerState<_ProfileTab> {
     _nameController.text = profile.name;
     _emailController.text = profile.email;
     _phoneController.text = profile.phone ?? '';
+    _addressController.text = profile.address ?? '';
     _positionController.text = profile.position ?? '';
     _shiftController.text = profile.shift ?? '';
     _initialized = true;
@@ -497,6 +568,9 @@ class _ProfileTabState extends ConsumerState<_ProfileTab> {
         phone: _phoneController.text.trim().isEmpty
             ? null
             : _phoneController.text.trim(),
+        address: _addressController.text.trim().isEmpty
+            ? null
+            : _addressController.text.trim(),
         position: _positionController.text.trim().isEmpty
             ? null
             : _positionController.text.trim(),
@@ -567,6 +641,12 @@ class _ProfileTabState extends ConsumerState<_ProfileTab> {
                   controller: _phoneController,
                   decoration: const InputDecoration(labelText: 'Phone'),
                   keyboardType: TextInputType.phone,
+                ),
+                const SizedBox(height: 12),
+                TextFormField(
+                  controller: _addressController,
+                  decoration: const InputDecoration(labelText: 'Address'),
+                  maxLines: 2,
                 ),
                 const SizedBox(height: 12),
                 TextFormField(

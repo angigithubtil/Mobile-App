@@ -11,8 +11,11 @@ import {
   getOneEmployee,
   updateEmployee,
   deleteEmployee,
+  updateMe,
   clockin,
   clockout,
+  clockInMe,
+  clockOutMe,
   assignShift,
   getAssignedShift,
   getAllAssignedShifts,
@@ -21,6 +24,7 @@ import {
   getAllEmployeesWithStatus,
   getAllEmployeesWithAttendance,
   singleAttendance,
+  singleAttendanceMe,
   singleStatus,
   logout,
 } from "./routes.js";
@@ -52,6 +56,7 @@ router.post(
   createEmployee,
 );
 router.get("/employees", requireAdmin, getAllEmployees);
+router.put("/employees/me", updateMe);
 router.get("/employees/:id", requireSelfOrAdmin("id"), getOneEmployee);
 router.put("/employees/:id", requireSelfOrAdmin("id"), updateEmployee);
 router.delete("/employees/:id", requireAdmin, deleteEmployee);
@@ -59,6 +64,8 @@ router.put("/updateEmployee/:id", requireSelfOrAdmin("id"), updateEmployee);
 router.delete("/deleteEmployee/:id", requireAdmin, deleteEmployee);
 router.post("/clockin/:id", requireSelfOrAdmin("id"), clockin);
 router.post("/clockout/:id", requireSelfOrAdmin("id"), clockout);
+router.post("/attendance/clock-in", clockInMe);
+router.post("/attendance/clock-out", clockOutMe);
 router.post("/assignShift/:id", requireAdmin, assignShift);
 router.get("/assignedShift", requireAdmin, getAllAssignedShifts);
 router.get("/assignedShift/:id", requireSelfOrAdmin("id"), getAssignedShift);
@@ -67,6 +74,7 @@ router.delete("/shifts/:id", requireAdmin, deleteShift);
 router.get("/status/:id", requireSelfOrAdmin("id"), singleStatus);
 router.get("/status", requireAdmin, getAllEmployeesWithStatus);
 router.get("/attendance/:id", requireSelfOrAdmin("id"), singleAttendance);
+router.get("/attendance/me", singleAttendanceMe);
 router.get("/attendance", requireAdmin, getAllEmployeesWithAttendance);
 router.post("/logout", logout);
 

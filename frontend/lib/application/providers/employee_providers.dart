@@ -3,6 +3,7 @@ import '../../config/app_config.dart';
 import '../../domain/models/employee.dart';
 import '../../domain/models/shift.dart';
 import '../../infrastructure/services/employee_api_service.dart';
+import '../../domain/models/attendance.dart';
 import 'admin_providers.dart';
 import 'auth_providers.dart';
 
@@ -43,9 +44,38 @@ class MyProfileNotifier extends StateNotifier<AsyncValue<Employee>> {
   }
 
   Future<Employee> updateProfile(Employee employee) async {
-    final updated = await _api.updateProfile(employee);
+    final updated = await _api.updateProfileMe({
+      'phone': employee.phone,
+      'address': employee.address,
+      'name': employee.name,
+      'profilePicture': employee.profilePicture,
+    });
     state = AsyncValue.data(updated);
     return updated;
+  }
+}
+
+final myAttendanceProvider =
+    StateNotifierProvider<MyAttendanceNotifier, AsyncValue<List<Attendance>>>((ref) {
+  final api = ref.watch(employeeApiServiceProvider);
+  return MyAttendanceNotifier(api);
+});
+
+class MyAttendanceNotifier extends StateNotifier<AsyncValue<List<Attendance>>> {
+  final EmployeeApiService _api;
+
+  MyAttendanceNotifier(this._api) : super(const AsyncValue.loading()) {
+    fetchAttendance();
+  }
+
+  Future<void> fetchAttendance() async {
+    state = const AsyncValue.loading();
+    try {
+      final records = await _api.getMyAttendance();
+      state = AsyncValue.data(records);
+    } catch (e, st) {
+      state = AsyncValue.error(e, st);
+    }
   }
 }
 
@@ -81,15 +111,15 @@ class MyShiftsNotifier extends StateNotifier<AsyncValue<List<Shift>>> {
     }
   }
 
-  Future<void> clockIn(String shiftId) async {
+  Future<void> clockIn([String? shiftId]) async {
     if (_employeeId == null) return;
-    await _api.clockIn(_employeeId!, shiftId);
+    await _api.clockInMe();
     await fetchShifts();
   }
 
-  Future<void> clockOut(String shiftId) async {
+  Future<void> clockOut([String? shiftId]) async {
     if (_employeeId == null) return;
-    await _api.clockOut(_employeeId!, shiftId);
+    await _api.clockOutMe();
     await fetchShifts();
   }
 }

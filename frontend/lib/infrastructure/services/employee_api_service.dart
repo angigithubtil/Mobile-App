@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import '../../config/app_config.dart';
 import '../../domain/models/employee.dart';
 import '../../domain/models/shift.dart';
+import '../../domain/models/attendance.dart';
 
 class EmployeeApiService {
   final String baseUrl;
@@ -114,5 +115,52 @@ class EmployeeApiService {
     }
     final body = json.decode(response.body) as Map<String, dynamic>?;
     throw Exception(body?['message'] ?? 'Clock-out failed (${response.statusCode})');
+  }
+
+  Future<List<Attendance>> getMyAttendance() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl${AppConfig.myAttendanceEndpoint}'),
+      headers: _headers(json: false),
+    );
+    if (response.statusCode == 200) {
+      final List<dynamic> data = json.decode(response.body);
+      return data.map((json) => Attendance.fromJson(json)).toList();
+    }
+    throw Exception('Failed to load attendance');
+  }
+
+  Future<void> clockInMe() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl${AppConfig.clockInMeEndpoint}'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      final body = json.decode(response.body) as Map<String, dynamic>?;
+      throw Exception(body?['message'] ?? 'Clock-in failed');
+    }
+  }
+
+  Future<void> clockOutMe() async {
+    final response = await http.post(
+      Uri.parse('$baseUrl${AppConfig.clockOutMeEndpoint}'),
+      headers: _headers(),
+    );
+    if (response.statusCode != 200) {
+      final body = json.decode(response.body) as Map<String, dynamic>?;
+      throw Exception(body?['message'] ?? 'Clock-out failed');
+    }
+  }
+
+  Future<Employee> updateProfileMe(Map<String, dynamic> updates) async {
+    final response = await http.put(
+      Uri.parse('$baseUrl${AppConfig.updateMeEndpoint}'),
+      headers: _headers(),
+      body: json.encode(updates),
+    );
+    if (response.statusCode == 200) {
+      return Employee.fromJson(
+          json.decode(response.body) as Map<String, dynamic>);
+    }
+    throw Exception('Failed to update profile');
   }
 }

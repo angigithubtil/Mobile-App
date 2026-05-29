@@ -259,6 +259,36 @@ async function getAllEmployees(req, res) {
 
 //update employee
 
+async function updateMe(req, res) {
+  const { id } = req.user;
+  const { phone, password, address, name, profilePicture } = req.body;
+
+  try {
+    const updateData = {};
+    if (phone !== undefined) updateData.phone = phone;
+    if (address !== undefined) updateData.address = address;
+    if (name !== undefined) updateData.name = name;
+    if (profilePicture !== undefined) updateData.profilePicture = profilePicture;
+
+    if (password) {
+      const salt = await bcrypt.getSalt(10);
+      updateData.password = await bcrypt.hash(password, salt);
+    }
+
+    const employee = await Employee.findOneAndUpdate({ id }, updateData, {
+      new: true,
+    }).select("-password");
+
+    if (!employee) {
+      return res.status(404).json({ message: "Employee not found" });
+    }
+
+    return res.status(200).json(employee);
+  } catch (error) {
+    return res.status(500).json({ message: "Error updating profile", error });
+  }
+}
+
 async function updateEmployee(req, res) {
   const { id } = req.params;
   const {
@@ -331,7 +361,7 @@ async function deleteEmployee(req, res) {
 //clock in
 async function clockin(req, res) {
   const { id } = req.params;
-  const { shiftId } = req.body;
+  let { shiftId } = req.body;
   const currentTime = new Date().toLocaleTimeString();
   const date = new Date().toISOString().split("T")[0];
 
@@ -341,11 +371,18 @@ async function clockin(req, res) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    const shift = await Shift.findOne({ id: shiftId, employeeId: Number(id) });
+    let shift;
+    if (shiftId) {
+      shift = await Shift.findOne({ id: shiftId, employeeId: Number(id) });
+    } else {
+      // Find today's shift if shiftId not provided
+      shift = await Shift.findOne({ employeeId: Number(id), date });
+    }
+
     if (!shift) {
       return res
         .status(404)
-        .json({ message: "Shift not found for this employee" });
+        .json({ message: "No shift found for today or invalid shiftId" });
     }
 
     // Check if already clocked in today
@@ -376,10 +413,15 @@ async function clockin(req, res) {
   }
 }
 
+async function clockInMe(req, res) {
+  req.params.id = req.user.id;
+  return clockin(req, res);
+}
+
 //clock out
 async function clockout(req, res) {
   const { id } = req.params;
-  const { shiftId } = req.body;
+  let { shiftId } = req.body;
   const currentTime = new Date().toLocaleTimeString();
   const date = new Date().toISOString().split("T")[0];
 
@@ -389,11 +431,18 @@ async function clockout(req, res) {
       return res.status(404).json({ message: "Employee not found" });
     }
 
-    const shift = await Shift.findOne({ id: shiftId, employeeId: Number(id) });
+    let shift;
+    if (shiftId) {
+      shift = await Shift.findOne({ id: shiftId, employeeId: Number(id) });
+    } else {
+      // Find today's shift
+      shift = await Shift.findOne({ employeeId: Number(id), date });
+    }
+
     if (!shift) {
       return res
         .status(404)
-        .json({ message: "Shift not found for this employee" });
+        .json({ message: "No shift found for today or invalid shiftId" });
     }
 
     // Check if clocked in today
@@ -430,6 +479,11 @@ async function clockout(req, res) {
     console.log(error);
     res.status(500).json({ message: "Clock-out failed", error });
   }
+}
+
+async function clockOutMe(req, res) {
+  req.params.id = req.user.id;
+  return clockout(req, res);
 }
 
 // assign shift to employee
@@ -617,6 +671,11 @@ async function singleAttendance(req, res) {
       .json({ message: "Error retrieving employee", error });
   }
 }
+
+async function singleAttendanceMe(req, res) {
+  req.params.id = req.user.id;
+  return singleAttendance(req, res);
+}
 //get all employees with attendance
 
 async function getAllEmployeesWithAttendance(req, res) {
@@ -653,26 +712,22 @@ function buildFlatAttendanceRecords(shifts, nameByEmployeeId) {
 
       const key = `${shift.id}:${employeeId}:${date}`;
       const existing = byKey.get(key) ?? {
-        id: `${shift.id}:${date}`,
+        _id: `${shift.id}:${date}`,
         employeeId,
         employeeName,
         date,
         clockIn: null,
         clockOut: null,
-        status: "pending",
-        checkIn: null,
+        status: "Present",
       };
 
       const actionType = row?.actionType;
       const time = row?.time?.toString?.() ?? null;
       if (actionType === "Clock In" && time) {
-        existing.clockIn = existing.clockIn ?? time;
-        existing.checkIn = existing.checkIn ?? time;
-        existing.status = "active";
+        existing.clockIn = time;
       }
       if (actionType === "Clock Out" && time) {
-        existing.clockOut = existing.clockOut ?? time;
-        existing.status = "completed";
+        existing.clockOut = time;
       }
 
       byKey.set(key, existing);
@@ -701,9 +756,12 @@ export {
   getOneEmployee,
   createEmployee,
   updateEmployee,
+  updateMe,
   deleteEmployee,
   clockin,
   clockout,
+  clockInMe,
+  clockOutMe,
   assignShift, // ← Add this line
   getAssignedShift,
   getAllAssignedShifts,
@@ -712,6 +770,7 @@ export {
   getAllEmployeesWithStatus,
   getAllEmployeesWithAttendance,
   singleAttendance,
+  singleAttendanceMe,
   singleStatus,
   logout, // ← Add this
 };
