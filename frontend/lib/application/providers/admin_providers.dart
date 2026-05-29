@@ -77,7 +77,7 @@ class EmployeesNotifier extends StateNotifier<AsyncValue<List<Employee>>> {
     }
   }
 
-  Future<void> deleteEmployee(int id) async {
+  Future<void> deleteEmployee(String id) async {
     try {
       await _useCases.deleteEmployee(id);
       state.whenData((employees) {
@@ -193,7 +193,7 @@ class AttendanceNotifier extends StateNotifier<AsyncValue<List<Attendance>>> {
     }
   }
 
-  Future<void> deleteAttendance(int id) async {
+  Future<void> deleteAttendance(String id) async {
     try {
       await _useCases.deleteAttendance(id);
       state.whenData((records) {

@@ -1,0 +1,15 @@
+# Node backend artifacts
+backend/node_modules/
+backend/.env
+backend/uploads/
+
+# Flutter/frontend generated artifacts
+frontend/.dart_tool/
+frontend/.flutter-plugins-dependencies
+frontend/build/
+frontend/.idea/
+frontend/*.iml
+
+# OS/editor noise
+.DS_Store
+Thumbs.db

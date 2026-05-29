@@ -28,7 +28,9 @@ class Attendance {
       date: _asString(json['date']),
       clockIn: _asString(json['clockIn']),
       clockOut: _asString(json['clockOut']),
-      status: _asString(json['status']).isNotEmpty ? _asString(json['status']) : 'pending',
+      status: _asString(json['status']).isNotEmpty
+          ? _asString(json['status'])
+          : 'pending',
       employeeName: _asString(json['employeeName']),
       checkIn: _asString(json['checkIn'] ?? json['clockIn']),
     );

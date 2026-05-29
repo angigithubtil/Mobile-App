@@ -3,6 +3,13 @@ import Employee from "../modals/modal.employee.js";
 import Shift from "../modals/modal.shift.js";
 import { signToken } from "../utils/jwt.js";
 
+const sanitizeEmployee = (employee) => {
+  if (!employee) return employee;
+  const obj = employee.toObject ? employee.toObject() : employee;
+  delete obj.password;
+  return obj;
+};
+
 // Register
 async function register(req, res) {
   const {
@@ -24,7 +31,9 @@ async function register(req, res) {
 
   const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
   if (!name || !email || !id || !password) {
-    return res.status(400).json({ message: "Name, email, id and password are required." });
+    return res
+      .status(400)
+      .json({ message: "Name, email, id and password are required." });
   }
 
   if (!emailRegex.test(email)) {
@@ -32,7 +41,9 @@ async function register(req, res) {
   }
 
   if (password.length < 6) {
-    return res.status(400).json({ message: "Password must be at least 6 characters." });
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 6 characters." });
   }
 
   try {
@@ -47,7 +58,7 @@ async function register(req, res) {
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
-    
+
     const employee = new Employee({
       name,
       email,
@@ -82,23 +93,92 @@ async function register(req, res) {
   }
 }
 
+async function createEmployee(req, res) {
+  const {
+    name,
+    email,
+    id,
+    password,
+    profilePicture,
+    phone,
+    position,
+    shift,
+    status,
+    isAdmin,
+  } = req.body;
+
+  const profilePictureUrl = req.file
+    ? `/uploads/${req.file.filename}`
+    : profilePicture || undefined;
+
+  const emailRegex = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+  if (!name || !email || !id || !password) {
+    return res
+      .status(400)
+      .json({ message: "Name, email, id and password are required." });
+  }
+
+  if (!emailRegex.test(email)) {
+    return res.status(400).json({ message: "Invalid email address." });
+  }
+
+  if (password.length < 6) {
+    return res
+      .status(400)
+      .json({ message: "Password must be at least 6 characters." });
+  }
+
+  try {
+    const existingEmployee = await Employee.findOne({
+      $or: [{ email }, { id }],
+    });
+    if (existingEmployee) {
+      return res.status(400).json({ message: "Email or ID already in use" });
+    }
+
+    const salt = await bcrypt.genSalt(10);
+    const hashedPassword = await bcrypt.hash(password, salt);
+
+    const employee = new Employee({
+      name,
+      email,
+      id,
+      password: hashedPassword,
+      profilePicture: profilePictureUrl,
+      phone,
+      position,
+      shift,
+      status,
+      isAdmin,
+    });
+
+    const savedEmployee = await employee.save();
+    return res.status(201).json({
+      message: "Employee created successfully",
+      employee: sanitizeEmployee(savedEmployee),
+    });
+  } catch (error) {
+    console.error(error);
+    return res.status(400).json({ message: "Error creating employee", error });
+  }
+}
+
 async function changePassword(req, res) {
   const { id } = req.params;
   const { currentPassword, newPassword } = req.body;
-  
 
   try {
     // 1. Find the employee by ID
     const employee = await Employee.findOne({ id });
     if (!employee) {
-      console.log( "Employee not found")
+      console.log("Employee not found");
       return res.status(404).json({ message: "Employee not found" });
     }
 
     // 2. Verify the current password
     const isMatch = await bcrypt.compare(currentPassword, employee.password);
     if (!isMatch) {
-      console.log("Incorrect current password")
+      console.log("Incorrect current password");
       return res.status(401).json({ message: "Incorrect current password" });
     }
 
@@ -156,7 +236,7 @@ async function login(req, res) {
 async function getOneEmployee(req, res) {
   const { id } = req.params;
   try {
-    const employee = await Employee.findOne({ id });
+    const employee = await Employee.findOne({ id }).select("-password");
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
     }
@@ -170,10 +250,7 @@ async function getOneEmployee(req, res) {
 
 async function getAllEmployees(req, res) {
   try {
-    const employees = await Employee.find();
-    if (!employees) {
-      return res.status(404).json({ message: "No employees found" });
-    }
+    const employees = await Employee.find().select("-password");
     return res.status(200).json(employees);
   } catch (error) {
     return res.status(500).json({ message: "Error fetching employees", error });
@@ -184,7 +261,17 @@ async function getAllEmployees(req, res) {
 
 async function updateEmployee(req, res) {
   const { id } = req.params;
-  const { name, email, password, profilePicture, phone, position, shift, status, isAdmin } = req.body;
+  const {
+    name,
+    email,
+    password,
+    profilePicture,
+    phone,
+    position,
+    shift,
+    status,
+    isAdmin,
+  } = req.body;
 
   try {
     const updateData = {
@@ -203,11 +290,9 @@ async function updateEmployee(req, res) {
       updateData.password = await bcrypt.hash(password, salt);
     }
 
-    const employee = await Employee.findOneAndUpdate(
-      { id },
-      updateData,
-      { new: true }
-    );
+    const employee = await Employee.findOneAndUpdate({ id }, updateData, {
+      new: true,
+    }).select("-password");
 
     if (!employee) {
       return res.status(404).json({ message: "Employee not found" });
@@ -215,7 +300,7 @@ async function updateEmployee(req, res) {
 
     return res.status(200).json(employee);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({ message: "Error updating employee", error });
   }
 }
@@ -234,9 +319,10 @@ async function deleteEmployee(req, res) {
 
     // Delete all shifts for this employee
     await Shift.deleteMany({ employeeId: Number(id) }); // Make sure types match
-    
 
-    return res.status(200).json({ message: "Employee and their shifts deleted successfully" });
+    return res
+      .status(200)
+      .json({ message: "Employee and their shifts deleted successfully" });
   } catch (error) {
     return res.status(500).json({ message: "Error deleting employee", error });
   }
@@ -257,12 +343,14 @@ async function clockin(req, res) {
 
     const shift = await Shift.findOne({ id: shiftId, employeeId: Number(id) });
     if (!shift) {
-      return res.status(404).json({ message: "Shift not found for this employee" });
+      return res
+        .status(404)
+        .json({ message: "Shift not found for this employee" });
     }
 
     // Check if already clocked in today
     const existingClockIn = shift.attendance.find(
-      (a) => a.date === date && a.actionType === "Clock In"
+      (a) => a.date === date && a.actionType === "Clock In",
     );
     if (existingClockIn) {
       return res.status(400).json({ message: "Already clocked in today" });
@@ -273,7 +361,7 @@ async function clockin(req, res) {
       actionType: "Clock In",
       time: currentTime,
       date: date,
-      status: "active"
+      status: "active",
     });
 
     // Update employee status
@@ -303,12 +391,14 @@ async function clockout(req, res) {
 
     const shift = await Shift.findOne({ id: shiftId, employeeId: Number(id) });
     if (!shift) {
-      return res.status(404).json({ message: "Shift not found for this employee" });
+      return res
+        .status(404)
+        .json({ message: "Shift not found for this employee" });
     }
 
     // Check if clocked in today
     const clockInRecord = shift.attendance.find(
-      (a) => a.date === date && a.actionType === "Clock In"
+      (a) => a.date === date && a.actionType === "Clock In",
     );
     if (!clockInRecord) {
       return res.status(400).json({ message: "You haven't clocked in today" });
@@ -316,7 +406,7 @@ async function clockout(req, res) {
 
     // Check if already clocked out
     const existingClockOut = shift.attendance.find(
-      (a) => a.date === date && a.actionType === "Clock Out"
+      (a) => a.date === date && a.actionType === "Clock Out",
     );
     if (existingClockOut) {
       return res.status(400).json({ message: "Already clocked out today" });
@@ -327,7 +417,7 @@ async function clockout(req, res) {
       actionType: "Clock Out",
       time: currentTime,
       date: date,
-      status: "on leave"
+      status: "on leave",
     });
 
     // Update employee status
@@ -348,9 +438,8 @@ async function assignShift(req, res) {
   const { id } = req.params;
 
   try {
-    
-    console.log("here are the data sent", date, shiftType, shiftId)
-  
+    console.log("here are the data sent", date, shiftType, shiftId);
+
     const existingId = await Shift.findOne({ id: shiftId });
     if (existingId) {
       return res.status(400).json({ message: "ID already in use" });
@@ -359,15 +448,16 @@ async function assignShift(req, res) {
       id: shiftId,
       employeeId: Number(id),
       date,
-      shiftType
+      shiftType,
     });
-    
 
     const savedShift = await shift.save();
-    
-    return res.status(201).json({ message: "Shift assigned successfully", shift: savedShift });
+
+    return res
+      .status(201)
+      .json({ message: "Shift assigned successfully", shift: savedShift });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({ message: "Error assigning shift", error });
   }
 }
@@ -384,9 +474,11 @@ async function getAssignedShift(req, res) {
       return res.status(404).json({ message: "Shift not found for employee" });
     }
 
-    return res.status(200).json({message:"Shift(s) found successfully", shifts: shift});
+    return res
+      .status(200)
+      .json({ message: "Shift(s) found successfully", shifts: shift });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({ message: "Error retrieving shift", error });
   }
 }
@@ -403,7 +495,7 @@ async function getAllAssignedShifts(req, res) {
 
     return res.status(200).json(shifts);
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({ message: "Error retrieving shifts", error });
   }
 }
@@ -412,7 +504,7 @@ async function getAllAssignedShifts(req, res) {
 async function updateShift(req, res) {
   const { id } = req.params;
   const { date, shiftType, attendance } = req.body;
-  
+
   try {
     const updateFields = {};
     if (date) updateFields.date = date;
@@ -421,22 +513,22 @@ async function updateShift(req, res) {
     let updatedShift = await Shift.findOneAndUpdate(
       { id },
       { $set: updateFields },
-      { new: true }
+      { new: true },
     );
 
     if (attendance && attendance.length > 0) {
       await Shift.updateOne(
         { id },
-        { $push: { attendance: { $each: attendance } } }
+        { $push: { attendance: { $each: attendance } } },
       );
       updatedShift = await Shift.findOne({ id });
     }
-    
+
     if (!updatedShift) {
       return res.status(404).json({ message: "Shift not found" });
     }
-    console.log(updatedShift)
-   
+    console.log(updatedShift);
+
     return res.status(200).json({
       message: "Shift updated",
       shift: {
@@ -448,7 +540,7 @@ async function updateShift(req, res) {
       },
     });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({ message: "Error updating shift", error });
   }
 }
@@ -456,18 +548,18 @@ async function updateShift(req, res) {
 // delete shift by ID
 async function deleteShift(req, res) {
   const { id } = req.params;
- console.log(id, typeof id )
+  console.log(id, typeof id);
   try {
-    const deletedShift = await Shift.findOneAndDelete({id});
+    const deletedShift = await Shift.findOneAndDelete({ id });
 
     if (!deletedShift) {
-      console.log("issue")
+      console.log("issue");
       return res.status(404).json({ message: "Shift not found" });
     }
 
     return res.status(200).json({ message: "Shift deleted successfully" });
   } catch (error) {
-    console.log(error)
+    console.log(error);
     return res.status(500).json({ message: "Error deleting shift", error });
   }
 }
@@ -557,6 +649,7 @@ export {
   login,
   getAllEmployees,
   getOneEmployee,
+  createEmployee,
   updateEmployee,
   deleteEmployee,
   clockin,

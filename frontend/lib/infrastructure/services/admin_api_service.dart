@@ -38,7 +38,7 @@ class AdminApiService {
   }
 
   Future<Employee> createEmployee(Employee employee) async {
-    final url = '$baseUrl/register';
+    final url = '$baseUrl${AppConfig.employeesEndpoint}';
     final body = json.encode(employee.toJson());
     final response = await http.post(
       Uri.parse(url),
@@ -50,30 +50,30 @@ class AdminApiService {
       final employeeJson = jsonResponse['employee'];
       return Employee.fromJson(employeeJson);
     } else {
-      throw Exception('Failed to create employee');
+      throw Exception('Failed to create employee: ${response.statusCode} ${response.body}');
     }
   }
 
   Future<Employee> updateEmployee(Employee employee) async {
     final response = await http.put(
-      Uri.parse('$baseUrl/updateEmployee/${employee.id}'),
+      Uri.parse('$baseUrl${AppConfig.employeesEndpoint}/${employee.id}'),
       headers: _buildHeaders(),
       body: json.encode(employee.toJson()),
     );
     if (response.statusCode == 200) {
       return Employee.fromJson(json.decode(response.body));
     } else {
-      throw Exception('Failed to update employee');
+      throw Exception('Failed to update employee: ${response.statusCode} ${response.body}');
     }
   }
 
-  Future<void> deleteEmployee(int id) async {
+  Future<void> deleteEmployee(String id) async {
     final response = await http.delete(
-      Uri.parse('$baseUrl/deleteEmployee/$id'),
+      Uri.parse('$baseUrl${AppConfig.employeesEndpoint}/$id'),
       headers: _buildHeaders(jsonContent: false),
     );
     if (response.statusCode != 200) {
-      throw Exception('Failed to delete employee');
+      throw Exception('Failed to delete employee: ${response.statusCode} ${response.body}');
     }
   }
 
@@ -115,7 +115,8 @@ class AdminApiService {
       final payload = json.decode(response.body) as Map<String, dynamic>;
       return Shift.fromJson(payload['shift'] as Map<String, dynamic>);
     } else {
-      throw Exception('Failed to update shift: ${response.statusCode} ${response.body}');
+      throw Exception(
+          'Failed to update shift: ${response.statusCode} ${response.body}');
     }
   }
 
@@ -156,7 +157,7 @@ class AdminApiService {
     }
   }
 
-  Future<void> deleteAttendance(int id) async {
+  Future<void> deleteAttendance(String id) async {
     final response = await http.delete(
       Uri.parse('$baseUrl${AppConfig.attendanceEndpoint}/$id'),
       headers: _buildHeaders(jsonContent: false),
@@ -166,13 +167,17 @@ class AdminApiService {
     }
   }
 
-  Future<void> assignShift({required String employeeId, required String shiftType, required String date}) async {
+  Future<void> assignShift(
+      {required String employeeId,
+      required String shiftType,
+      required String date}) async {
     final url = '$baseUrl/assignShift/$employeeId';
     final String shiftId = const Uuid().v4();
     final response = await http.post(
       Uri.parse(url),
       headers: _buildHeaders(),
-      body: json.encode({'shiftId': shiftId, 'shiftType': shiftType, 'date': date}),
+      body: json
+          .encode({'shiftId': shiftId, 'shiftType': shiftType, 'date': date}),
     );
     if (response.statusCode != 200 && response.statusCode != 201) {
       throw Exception('Failed to assign shift: ${response.body}');

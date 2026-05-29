@@ -2,7 +2,7 @@ class Employee {
   final String id;
   final String name;
   final String email;
-  final String password;
+  final String? password;
   final String? profilePicture;
   final String? phone;
   final String? position;
@@ -14,7 +14,7 @@ class Employee {
     required this.id,
     required this.name,
     required this.email,
-    required this.password,
+    this.password,
     this.profilePicture,
     this.phone,
     this.position,
@@ -28,7 +28,7 @@ class Employee {
       id: json['id'] ?? json['_id'] ?? '',
       name: json['name'] ?? '',
       email: json['email'] ?? '',
-      password: json['password'] ?? '',
+      password: json['password'],
       profilePicture: json['profilePicture'],
       phone: json['phone'],
       position: json['position'],
@@ -39,11 +39,10 @@ class Employee {
   }
 
   Map<String, dynamic> toJson() {
-    return {
+    final data = {
       'id': id,
       'name': name,
       'email': email,
-      'password': password,
       'profilePicture': profilePicture,
       'phone': phone,
       'position': position,
@@ -51,6 +50,10 @@ class Employee {
       'status': status,
       'isAdmin': isAdmin,
     };
+    if (password != null && password!.isNotEmpty) {
+      data['password'] = password;
+    }
+    return data;
   }
 
   Employee copyWith({

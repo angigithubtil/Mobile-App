@@ -7,7 +7,7 @@ abstract class AdminRepository {
   Future<List<Employee>> getEmployees();
   Future<Employee> createEmployee(Employee employee);
   Future<Employee> updateEmployee(Employee employee);
-  Future<void> deleteEmployee(int id);
+  Future<void> deleteEmployee(String id);
 
   // Shift operations
   Future<List<Shift>> getShifts();
@@ -18,5 +18,5 @@ abstract class AdminRepository {
   // Attendance operations
   Future<List<Attendance>> getAttendance();
   Future<Attendance> updateAttendance(Attendance attendance);
-  Future<void> deleteAttendance(int id);
+  Future<void> deleteAttendance(String id);
 } 

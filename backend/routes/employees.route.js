@@ -5,6 +5,7 @@ import { fileURLToPath } from "url";
 import {
   register,
   login,
+  createEmployee,
   getAllEmployees,
   getOneEmployee,
   updateEmployee,
@@ -32,7 +33,7 @@ const upload = multer({
     },
     filename: (req, file, cb) => {
       const timestamp = Date.now();
-      const safeName = file.originalname.replace(/[^a-z0-9.\-\_\.]/gi, '_');
+      const safeName = file.originalname.replace(/[^a-z0-9.\-\_\.]/gi, "_");
       cb(null, `${timestamp}-${safeName}`);
     },
   }),
@@ -41,10 +42,13 @@ const upload = multer({
 
 const router = express.Router();
 
-router.post("/register", upload.single('profilePicture'), register);
+router.post("/register", upload.single("profilePicture"), register);
 router.post("/login", login);
+router.post("/employees", upload.single("profilePicture"), createEmployee);
 router.get("/employees", getAllEmployees);
 router.get("/employees/:id", getOneEmployee);
+router.put("/employees/:id", updateEmployee);
+router.delete("/employees/:id", deleteEmployee);
 router.put("/updateEmployee/:id", updateEmployee);
 router.delete("/deleteEmployee/:id", deleteEmployee);
 router.post("/clockin/:id", clockin);

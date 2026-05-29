@@ -21,7 +21,7 @@ class AdminUseCases {
     return await repository.updateEmployee(employee);
   }
 
-  Future<void> deleteEmployee(int id) async {
+  Future<void> deleteEmployee(String id) async {
     await repository.deleteEmployee(id);
   }
 
@@ -51,7 +51,7 @@ class AdminUseCases {
     return await repository.updateAttendance(attendance);
   }
 
-  Future<void> deleteAttendance(int id) async {
+  Future<void> deleteAttendance(String id) async {
     await repository.deleteAttendance(id);
   }
 } 

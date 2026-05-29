@@ -19,7 +19,9 @@ app.use((req, res, next) => {
   res.on("finish", () => {
     const elapsedMs = Date.now() - start;
     const ok = res.statusCode >= 200 && res.statusCode < 300;
-    console.log(`${req.method} ${req.url} ${res.statusCode} ${ok ? "OK" : "ERR"} ${elapsedMs}ms`);
+    console.log(
+      `${req.method} ${req.url} ${res.statusCode} ${ok ? "OK" : "ERR"} ${elapsedMs}ms`,
+    );
   });
   next();
 });
@@ -28,12 +30,13 @@ app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api", (req, res, next) => {
   if (mongoose.connection.readyState !== 1) {
     return res.status(503).json({
-      message: "Database not connected. Run MongoDB or set MOCK_DB=true for non-DB route testing.",
+      message:
+        "Database not connected. Run MongoDB or set MOCK_DB=true for non-DB route testing.",
     });
   }
   next();

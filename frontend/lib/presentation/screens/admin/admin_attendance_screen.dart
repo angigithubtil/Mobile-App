@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../widgets/admin_navigation_bar.dart';
 import '../../widgets/admin_header.dart';
 import '../../../application/providers/admin_providers.dart';
-import '../../../domain/models/attendance.dart';
 
 class AdminAttendanceScreen extends ConsumerWidget {
   const AdminAttendanceScreen({super.key});
