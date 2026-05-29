@@ -8,5 +8,9 @@ class AppConfig {
   static const String loginEndpoint = '/login';
   static const String logoutEndpoint = '/logout';
   static const String assignShiftEndpoint = '/assignShift';
+  static const String assignedShiftEndpoint = '/assignedShift';
   static const String updateShiftEndpoint = '/updateShift';
+  static const String clockInEndpoint = '/clockin';
+  static const String clockOutEndpoint = '/clockout';
+  static const String statusEndpoint = '/status';
 }
