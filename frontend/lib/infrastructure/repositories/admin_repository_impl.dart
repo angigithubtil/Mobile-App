@@ -57,17 +57,14 @@ class AdminRepositoryImpl implements AdminRepository {
   @override
   Future<Shift> createShift(Shift shift) async {
     try {
-      await _apiService.assignShift(
-        employeeId: shift.employeeId.toString(),
-        shiftType: shift.shiftType,
-        date: shift.date,
-      );
-      // Return a Shift object with the generated shiftId and provided data
+      // Delegate to API which returns the created shift payload
+      final created = await _apiService.createShift(shift);
       return Shift(
-        id: shift.id,
-        employeeId: shift.employeeId,
-        shiftType: shift.shiftType,
-        date: shift.date,
+        id: created.id,
+        employeeId: created.employeeId,
+        shiftType: created.shiftType,
+        date: created.date,
+        attendance: created.attendance,
       );
     } catch (e) {
       throw Exception('Failed to create shift: $e');
